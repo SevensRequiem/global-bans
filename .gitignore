@@ -26,3 +26,7 @@ go.work.sum
 
 # logs
 *.log
+
+# certs
+*.crt
+*.pem

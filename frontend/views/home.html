@@ -1,0 +1,220 @@
+{{define "content"}}
+<section id="about">
+    <h2>About</h2>
+    <p><i class="fas fa-info-circle fa-2xl"></i> Global Bans is a service that connects all your game servers to a central ban list and admin panel. This allows you to manage all your bans from one place.</p>
+    <p><i class="fas fa-users fa-2xl"></i> Global Bans is a free service that is available to everyone.</p>
+</section>
+
+<section id="features">
+    <h2>Features</h2>
+    <div id="features-inner">
+        <div class="feature">
+            <i class="fas fa-list fa-2xl"></i>
+            <h3>Central Ban List</h3>
+            <p>Connect all your game servers to a central ban list.</p>
+        </div>
+        <div class="feature">
+            <i class="fas fa-screwdriver-wrench fa-2xl"></i>
+            <h3>Admin Panel</h3>
+            <p>Manage all your bans from one place.</p>
+        </div>
+        <div class="feature">
+            <i class="fas fa-dollar-sign fa-2xl"></i>
+            <h3>Freemium</h3>
+            <p>Global Bans is a free service that is available to everyone. Premium features are available for a small fee.</p>
+        </div>
+    </div>
+</section>
+
+<section id="discord">
+    <h2>Discord</h2>
+    <p>Join our Discord server to get help and support.</p>
+    <a href="https://discord.gg/auroranet" target="_blank" rel="noopener noreferrer">Join Discord</a>
+</section>
+
+<section id="latest-bans">
+    <h2>Latest Bans</h2>
+    <div class="bans-inner">
+    </div>
+</section>
+<script>
+    fetch('/api/bans?limit=30')
+        .then(response => response.json())
+        .then(data => {
+            const bansInner = document.querySelector('.bans-inner');
+            bansInner.innerHTML = '';
+            data.forEach(ban => {
+                const banElement = document.createElement('div');
+                banElement.classList.add('ban');
+                banElement.innerHTML = `
+                    <i class="fa-solid fa-ban fa-fade fa-2xl"></i>
+                    <div class="ban-info">
+                        <p>Player: <strong>${ban.username}</strong></p>
+                        <p>Reason: <strong>${ban.reason}</strong></p>
+                        <p>Server: <strong>${ban.game}</strong></p>
+                        <p>Date: <strong>${ban.date_banned}</strong></p>
+                    </div>
+                `;
+                bansInner.appendChild(banElement);
+            });
+        });
+        
+
+</script>
+<style>
+    #about {
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    #features {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    #features-inner {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        gap: 1rem;
+    }
+
+    .feature {
+        width: 30%;
+        padding: 1rem;
+        border: 1px solid #ccc;
+        border-radius: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .feature h3 {
+        margin-top: 0.5rem;
+    }
+
+    .feature p {
+        margin-bottom: 0;
+    }
+
+    .fa-circle-info {
+        color: #dc3545;
+        margin-right: 0.5rem;
+    }
+
+    .fa-users {
+        color: #17a2b8;
+        margin-right: 0.5rem;
+    }
+
+
+    .fa-list {
+        color: #007bff;
+        margin-right: 0.5rem;
+    }
+
+    .fa-screwdriver-wrench {
+        color: #28a745;
+        margin-right: 0.5rem;
+    }
+
+    .fa-dollar-sign {
+        color: #ffc107;
+        margin-right: 0.5rem;
+    }
+
+    .fa-ban {
+        color: #dc3545;
+        margin-right: 0.5rem;
+    }
+
+    #discord {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    #discord a {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background-color: #7289da;
+        color: white;
+        text-decoration: none;
+        border-radius: 0.5rem;
+    }
+
+    #discord a:hover {
+        background-color: #677bc4;
+    }
+
+    #latest-bans {
+        text-align: center;
+    }
+
+    .bans-inner {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    .ban {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        border: 1px solid #ccc;
+        border-radius: 0.5rem;
+        width: 100%;
+        max-width: 30rem;
+    }
+
+    .ban i {
+        font-size: 2rem;
+        margin-right: 1rem;
+    }
+
+    .ban-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .ban-info p {
+        margin: 0;
+    }
+
+    .ban-info p strong {
+        font-weight: bold;
+    }
+
+    .fa-fade {
+        color: #ccc;
+    }
+
+    @media (max-width: 768px) {
+        .feature {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .ban {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 768px) {
+        #features-inner {
+            flex-direction: column;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .bans-inner {
+            flex-direction: column;
+        }
+    }
+
+</style>
+{{end}}

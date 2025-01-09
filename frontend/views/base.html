@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://kit.fontawesome.com/c0dbd754ad.js" crossorigin="anonymous"></script>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="description" content="Global Bans is a service that connects all your servers to a central ban database.">
+    <meta name="keywords" content="global bans, bans, ban list, central ban list, game server, game servers, admin panel">
+    <meta name="author" content="AuroraNET">
+    <meta name="robots" content="index, follow">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#333">
+    <title>Global Bans</title>
+</head>
+<body>
+    <header>
+        <h1>Global Bans</h1>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/bans">Bans</a></li>
+
+            {{if .User}}
+                {{if .IsAdmin}}
+                    <li><a href="/admin">Admin</a></li>
+                {{end}}
+                    <li><a href="/logout">Logout</a></li>
+            {{else}}
+                    <li><a href="/login">Login</a></li>
+            {{end}}
+        </ul>
+        </nav>
+    </header>
+    <main>
+        {{template "content" .}}
+    </main>
+    <footer>
+        <p>&copy; 2025 <a href="https://auroranet.host">AuroraNET</a></p>
+    </footer>
+</body>
+</html>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        width: 100vw;
+        height: 100vh;
+    }
+
+    header {
+        display: flex;
+        justify-content: space-between;
+        padding: 1rem;
+        background-color: #333;
+        color: white;
+    }
+
+    header h1 {
+        margin: 0;
+    }
+    
+
+    nav ul {
+        display: flex;
+        list-style-type: none;
+    }
+
+    nav ul li {
+        margin-right: 1rem;
+    }
+
+    nav ul li a {
+        color: white;
+        text-decoration: none;
+    }
+
+    main {
+        padding: 1rem;
+        height: 100%;
+    }
+
+    footer {
+
+        bottom: 0;
+        width: 100%;
+        background-color: #333;
+        color: white;
+        text-align: center;
+        padding: 1rem;
+    }
+
+    footer a {
+        color: white;
+        text-decoration: none;
+    }
+
+    footer a:hover {
+        text-decoration: underline;
+    }
+
+
+</style>
