@@ -2,6 +2,7 @@ package schedule
 
 import (
 	"fmt"
+	"globalbans/backend/logs"
 	"time"
 )
 
@@ -26,12 +27,12 @@ func NewScheduler() *Scheduler {
 
 func (s *Scheduler) ScheduleTask(task Task) {
 	s.Tasks = append(s.Tasks, task)
-	fmt.Println("Task scheduled at: ", time.Now())
+	logs.LogInfo(fmt.Sprintf("Task scheduled for every %v", task.Duration), 0, "scheduler/scheduler.go")
 }
 
 func (s *Scheduler) Run() {
 	s.StartTime = time.Now()
-	fmt.Println("Schedule started at: ", s.StartTime)
+	logs.LogInfo("Scheduler started", 0, "scheduler/scheduler.go")
 
 	for _, task := range s.Tasks {
 		go func(t Task) {
@@ -42,7 +43,7 @@ func (s *Scheduler) Run() {
 				t.Action()
 				s.LastUpdate = time.Now()
 				s.LastUpdateDuration = s.LastUpdate.Sub(s.StartTime)
-				fmt.Println("Task executed at: ", s.LastUpdate)
+				logs.LogInfo(fmt.Sprintf("Task executed at %v", s.LastUpdate), 0, "scheduler/scheduler.go")
 			}
 		}(task)
 	}

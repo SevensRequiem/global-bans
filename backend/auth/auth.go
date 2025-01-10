@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/gorilla/sessions"
@@ -18,6 +19,7 @@ import (
 
 	"globalbans/backend/config"
 	"globalbans/backend/database"
+	"globalbans/backend/logs"
 	"globalbans/backend/models"
 )
 
@@ -53,14 +55,20 @@ func CallbackHandler(c echo.Context) error {
 	client := oauthConf.Client(oauth2.NoContext, token)
 	resp, err := client.Get("https://discord.com/api/users/@me")
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err.Error())
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 	defer resp.Body.Close()
 
 	user := models.User{}
 	err = json.NewDecoder(resp.Body).Decode(&user)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err.Error())
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 	fmt.Println(user)
 
@@ -76,16 +84,25 @@ func CallbackHandler(c echo.Context) error {
 		user.DoesExist = true
 		_, err = collection.InsertOne(ctx, user)
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, err.Error())
+			_, file, line, ok := runtime.Caller(1)
+			if ok {
+				logs.LogError(err.Error(), line, file)
+			}
 		}
 	} else if err != nil {
-		return c.JSON(http.StatusInternalServerError, err.Error())
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	// Store the user in the session
 	sess, err := session.Get("session", c)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("Failed to get session: %s", err.Error()))
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 	sess.Options = &sessions.Options{
 		Path:     "/",
@@ -96,7 +113,10 @@ func CallbackHandler(c echo.Context) error {
 
 	err = sess.Save(c.Request(), c.Response())
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Sprintf("Failed to save session: %s", err.Error()))
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	return c.Redirect(http.StatusTemporaryRedirect, "/")
@@ -155,7 +175,10 @@ func GetUserByID(userID string) (*models.User, error) {
 	user := models.User{}
 	err := collection.FindOne(ctx, bson.M{"_id": userID}).Decode(&user)
 	if err != nil {
-		return nil, err
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	return &user, nil
@@ -169,7 +192,10 @@ func DeleteUser(c echo.Context) error {
 
 	_, err := collection.DeleteOne(ctx, bson.M{"_id": userID})
 	if err != nil {
-		return fmt.Errorf("failed to delete user: %v", err)
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	return nil
@@ -183,7 +209,10 @@ func GetUsers() ([]models.User, error) {
 	var users []models.User
 	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
-		return nil, err
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 	defer cursor.Close(ctx)
 
@@ -206,7 +235,10 @@ func GetUsersByGroup(group string) ([]models.User, error) {
 	var users []models.User
 	cursor, err := collection.Find(ctx, bson.M{"groups": group})
 	if err != nil {
-		return nil, err
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 	defer cursor.Close(ctx)
 
@@ -236,17 +268,26 @@ func GetTotalUsers() int {
 func GetCurrentUser(c echo.Context) (*models.User, error) {
 	sess, err := session.Get("session", c)
 	if err != nil {
-		return nil, err
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	userSessionValue, ok := sess.Values["user"]
 	if !ok {
-		return nil, fmt.Errorf("user not found in session")
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	user, ok := userSessionValue.(models.User)
 	if !ok {
-		return nil, fmt.Errorf("user session value type mismatch")
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	return &user, nil
@@ -259,10 +300,18 @@ func CheckLoggedIn(c echo.Context) (*models.LoggedInUser, error) {
 	}
 
 	userSessionValue, ok := sess.Values["user"]
-
+	if !ok {
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
+	}
 	user, ok := userSessionValue.(models.User)
 	if !ok {
-		return nil, fmt.Errorf("user session value type mismatch")
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	return &models.LoggedInUser{ID: user.ID, Username: user.Username, IsLoggedIn: true}, nil
@@ -275,7 +324,10 @@ func UpdateGroups(c echo.Context, userID string, groups string) error {
 
 	_, err := collection.UpdateOne(ctx, bson.M{"_id": userID}, bson.M{"$set": bson.M{"groups": groups}})
 	if err != nil {
-		return fmt.Errorf("failed to update user groups: %v", err)
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	return nil
@@ -289,12 +341,18 @@ func RefreshSession(c echo.Context) error {
 
 	userSessionValue, ok := sess.Values["user"]
 	if !ok {
-		return fmt.Errorf("user not found in session")
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	user, ok := userSessionValue.(models.User)
-	if !ok {
-		return fmt.Errorf("user session value type mismatch")
+	if err != nil {
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	userFromDB, err := GetUserByID(user.ID)
@@ -306,7 +364,10 @@ func RefreshSession(c echo.Context) error {
 
 	err = sess.Save(c.Request(), c.Response())
 	if err != nil {
-		return fmt.Errorf("failed to save session: %v", err)
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	return nil

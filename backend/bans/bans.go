@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"runtime"
 	"strconv"
 	"time"
 
@@ -21,16 +22,20 @@ func GetBan(c echo.Context) error {
 	var ban models.Ban
 	err := database.DB_Main.Collection("banned").FindOne(context.TODO(), models.Ban{ID: id}).Decode(&ban)
 	if err != nil {
-		logs.LogError(err.Error(), 0, "bans/bans.go")
-		return c.JSON(http.StatusInternalServerError, err.Error())
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 	return c.JSON(http.StatusOK, ban)
 }
 func GetAllBans(c echo.Context) error {
 	bans, err := database.DB_Main.Collection("banned").Find(context.Background(), bson.M{})
 	if err != nil {
-		logs.LogError(err.Error(), 0, "bans/bans.go")
-		return c.JSON(http.StatusInternalServerError, err.Error())
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 	var banList = []models.Ban{}
 	var ban models.Ban
@@ -39,16 +44,17 @@ func GetAllBans(c echo.Context) error {
 	for bans.Next(context.Background()) {
 		err := bans.Decode(&ban)
 		if err != nil {
-			logs.LogError(err.Error(), 0, "bans/bans.go")
-			return c.JSON(http.StatusInternalServerError, err.Error())
+			_, file, line, ok := runtime.Caller(1)
+			if ok {
+				logs.LogError(err.Error(), line, file)
+			}
 		}
 		banList = append(banList, ban)
 	}
 
 	defer bans.Close(context.Background())
 	if len(banList) == 0 {
-		logs.LogError("No bans found", 0, "bans/bans.go")
-		return c.JSON(http.StatusOK, []string{})
+		return c.JSON(http.StatusNotFound, "No bans found")
 	}
 	return c.JSON(http.StatusOK, banList)
 }
@@ -66,14 +72,18 @@ func GetBans(c echo.Context) error {
 
 	limitInt, err := strconv.ParseInt(limit, 10, 64)
 	if err != nil {
-		logs.LogError(fmt.Sprintf("Error parsing limit: %s", err.Error()), 0, "bans/bans.go")
-		return c.JSON(http.StatusInternalServerError, "Invalid limit parameter")
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	pageInt, err := strconv.ParseInt(page, 10, 64)
 	if err != nil {
-		logs.LogError(fmt.Sprintf("Error parsing page: %s", err.Error()), 0, "bans/bans.go")
-		return c.JSON(http.StatusInternalServerError, "Invalid page parameter")
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	findOptions := options.Find()
@@ -83,8 +93,10 @@ func GetBans(c echo.Context) error {
 
 	bans, err := database.DB_Main.Collection("banned").Find(context.TODO(), models.Ban{}, findOptions)
 	if err != nil {
-		logs.LogError(fmt.Sprintf("Error finding bans: %s", err.Error()), 0, "bans/bans.go")
-		return c.JSON(http.StatusInternalServerError, "Error retrieving bans")
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 	defer bans.Close(context.TODO())
 
@@ -93,16 +105,20 @@ func GetBans(c echo.Context) error {
 		var ban models.Ban
 		err := bans.Decode(&ban)
 		if err != nil {
-			logs.LogError(fmt.Sprintf("Error decoding ban: %s", err.Error()), 0, "bans/bans.go")
-			return c.JSON(http.StatusInternalServerError, "Error decoding ban data")
+			_, file, line, ok := runtime.Caller(1)
+			if ok {
+				logs.LogError(err.Error(), line, file)
+			}
 		}
 		banList = append(banList, ban)
 	}
-	if err := bans.Err(); err != nil {
-		logs.LogError(fmt.Sprintf("Cursor error: %s", err.Error()), 0, "bans/bans.go")
-		return c.JSON(http.StatusInternalServerError, "Error iterating over bans")
+	if err != nil {
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
-	logs.LogInfo(fmt.Sprintf("Ban List: %+v", banList), 0, "bans/bans.go")
+
 	return c.JSON(http.StatusOK, banList)
 }
 
@@ -111,8 +127,10 @@ func GetBanByID(c echo.Context) error {
 	var ban models.Ban
 	err := database.DB_Main.Collection("banned").FindOne(context.TODO(), models.Ban{ID: id}).Decode(&ban)
 	if err != nil {
-		logs.LogError(err.Error(), 0, "bans/bans.go")
-		return c.JSON(http.StatusInternalServerError, err.Error())
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 	return c.JSON(http.StatusOK, ban)
 }
@@ -130,8 +148,10 @@ func GetBansByIP(c echo.Context) error {
 		var ban models.Ban
 		err := bans.Decode(&ban)
 		if err != nil {
-			logs.LogError(err.Error(), 0, "bans/bans.go")
-			return c.JSON(http.StatusInternalServerError, err.Error())
+			_, file, line, ok := runtime.Caller(1)
+			if ok {
+				logs.LogError(err.Error(), line, file)
+			}
 		}
 		banList = append(banList, ban)
 	}
@@ -142,8 +162,10 @@ func GetBansBySteamID(c echo.Context) error {
 	steamID := c.Param("steamid")
 	bans, err := database.DB_Main.Collection("banned").Find(context.TODO(), models.Ban{SteamID: steamID})
 	if err != nil {
-		logs.LogError(err.Error(), 0, "bans/bans.go")
-		return c.JSON(http.StatusInternalServerError, err.Error())
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 	defer bans.Close(context.TODO())
 	var banList []models.Ban
@@ -151,8 +173,10 @@ func GetBansBySteamID(c echo.Context) error {
 		var ban models.Ban
 		err := bans.Decode(&ban)
 		if err != nil {
-			logs.LogError(err.Error(), 0, "bans/bans.go")
-			return c.JSON(http.StatusInternalServerError, err.Error())
+			_, file, line, ok := runtime.Caller(1)
+			if ok {
+				logs.LogError(err.Error(), line, file)
+			}
 		}
 		banList = append(banList, ban)
 	}
@@ -163,8 +187,10 @@ func GetBansByDiscordID(c echo.Context) error {
 	discordID := c.Param("discordid")
 	bans, err := database.DB_Main.Collection("banned").Find(context.TODO(), models.Ban{DiscordID: discordID})
 	if err != nil {
-		logs.LogError(err.Error(), 0, "bans/bans.go")
-		return c.JSON(http.StatusInternalServerError, err.Error())
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 	defer bans.Close(context.TODO())
 	var banList []models.Ban
@@ -172,8 +198,10 @@ func GetBansByDiscordID(c echo.Context) error {
 		var ban models.Ban
 		err := bans.Decode(&ban)
 		if err != nil {
-			logs.LogError(err.Error(), 0, "bans/bans.go")
-			return c.JSON(http.StatusInternalServerError, err.Error())
+			_, file, line, ok := runtime.Caller(1)
+			if ok {
+				logs.LogError(err.Error(), line, file)
+			}
 		}
 		banList = append(banList, ban)
 	}
@@ -193,8 +221,10 @@ func GetBansByReason(c echo.Context) error {
 		var ban models.Ban
 		err := bans.Decode(&ban)
 		if err != nil {
-			logs.LogError(err.Error(), 0, "bans/bans.go")
-			return c.JSON(http.StatusInternalServerError, err.Error())
+			_, file, line, ok := runtime.Caller(1)
+			if ok {
+				logs.LogError(err.Error(), line, file)
+			}
 		}
 		banList = append(banList, ban)
 	}
@@ -214,8 +244,10 @@ func GetBansByAdmin(c echo.Context) error {
 		var ban models.Ban
 		err := bans.Decode(&ban)
 		if err != nil {
-			logs.LogError(err.Error(), 0, "bans/bans.go")
-			return c.JSON(http.StatusInternalServerError, err.Error())
+			_, file, line, ok := runtime.Caller(1)
+			if ok {
+				logs.LogError(err.Error(), line, file)
+			}
 		}
 		banList = append(banList, ban)
 	}
@@ -227,8 +259,10 @@ func GetBansByServer(c echo.Context) error {
 	serverport := c.Param("port")
 	bans, err := database.DB_Main.Collection("banned").Find(context.TODO(), models.Ban{ServerIP: serverip, ServerPort: serverport})
 	if err != nil {
-		logs.LogError(err.Error(), 0, "bans/bans.go")
-		return c.JSON(http.StatusInternalServerError, err.Error())
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 	defer bans.Close(context.TODO())
 	var banList []models.Ban
@@ -236,8 +270,10 @@ func GetBansByServer(c echo.Context) error {
 		var ban models.Ban
 		err := bans.Decode(&ban)
 		if err != nil {
-			logs.LogError(err.Error(), 0, "bans/bans.go")
-			return c.JSON(http.StatusInternalServerError, err.Error())
+			_, file, line, ok := runtime.Caller(1)
+			if ok {
+				logs.LogError(err.Error(), line, file)
+			}
 		}
 		banList = append(banList, ban)
 	}
@@ -266,13 +302,17 @@ func SearchBans(c echo.Context) error {
 func CreateBan(c echo.Context) error {
 	var ban models.Ban
 	if err := c.Bind(&ban); err != nil {
-		logs.LogError(err.Error(), 0, "bans/bans.go")
-		return c.JSON(http.StatusInternalServerError, err.Error())
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 	_, err := database.DB_Main.Collection("bans").InsertOne(context.TODO(), ban)
 	if err != nil {
-		logs.LogError(err.Error(), 0, "bans/bans.go")
-		return c.JSON(http.StatusInternalServerError, err.Error())
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 	return c.JSON(http.StatusOK, ban)
 }
@@ -281,8 +321,10 @@ func DeleteBan(c echo.Context) error {
 	id := c.Param("id")
 	_, err := database.DB_Main.Collection("banned").DeleteOne(context.TODO(), models.Ban{ID: id})
 	if err != nil {
-		logs.LogError(err.Error(), 0, "bans/bans.go")
-		return c.JSON(http.StatusInternalServerError, err.Error())
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 	return c.JSON(http.StatusOK, id)
 }
@@ -311,8 +353,10 @@ func DummyData() error {
 		}
 		_, err := database.DB_Main.Collection("banned").InsertOne(context.TODO(), ban)
 		if err != nil {
-			logs.LogError(err.Error(), 0, "bans/bans.go")
-			continue
+			_, file, line, ok := runtime.Caller(1)
+			if ok {
+				logs.LogError(err.Error(), line, file)
+			}
 		}
 	}
 	return nil

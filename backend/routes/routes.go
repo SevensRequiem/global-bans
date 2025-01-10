@@ -5,7 +5,9 @@ import (
 	"globalbans/backend/auth"
 	"globalbans/backend/bans"
 	"globalbans/backend/home"
+	"globalbans/integration/minecraft"
 	"globalbans/integration/ping"
+	"globalbans/integration/source"
 
 	"github.com/labstack/echo/v4"
 )
@@ -54,4 +56,7 @@ func Routes(e *echo.Echo) {
 	e.GET("/api/server/ingest/bans", func(c echo.Context) error {
 		return bans.IngestBans(c)
 	})
+
+	minecraft.Routes(e)
+	source.Routes(e)
 }

@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"os"
+	"runtime"
 	"time"
 
 	"globalbans/backend/logs"
@@ -18,13 +19,18 @@ var DB_Main *mongo.Database
 func init() {
 	err := godotenv.Load()
 	if err != nil {
-		logs.LogError("Error loading .env file", 0, "database/database.go")
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	client, err := mongo.NewClient(options.Client().ApplyURI(os.Getenv("MONGO_URI")))
 	if err != nil {
-		logs.LogError("Error creating MongoDB client", 0, "database/database.go")
-		return
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -32,14 +38,18 @@ func init() {
 
 	err = client.Connect(ctx)
 	if err != nil {
-		logs.LogError("Error connecting to MongoDB", 0, "database/database.go")
-		return
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	err = client.Ping(ctx, readpref.Primary())
 	if err != nil {
-		logs.LogError("Error pinging MongoDB", 0, "database/database.go")
-		return
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 	DB_Main = client.Database(os.Getenv("MONGO_DB"))
 
@@ -52,7 +62,10 @@ func init() {
 		DB_Main.CreateCollection(context.Background(), "filesyncs")
 		DB_Main.CreateCollection(context.Background(), "rcons")
 	} else {
-		logs.LogError("Error creating config collection", 0, "database/database.go")
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError("Database is nil", line, file)
+		}
 	}
 }
 

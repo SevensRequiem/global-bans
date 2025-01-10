@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"runtime"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 )
 
@@ -17,6 +19,7 @@ type LogEntry struct {
 	File      string `json:"file"`
 	Line      int    `json:"line"`
 	Timestamp int64  `json:"timestamp"`
+	UserID    int    `json:"user_id"`
 }
 
 type HTTPLogEntry struct {
@@ -27,13 +30,25 @@ type HTTPLogEntry struct {
 	UserAgent string `json:"user_agent"`
 	IP        string `json:"ip"`
 	Time      int64  `json:"time"`
+	UserID    int    `json:"user_id"`
 }
 
 func init() {
 	var err error
-	logfile, err = os.OpenFile("anet.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	err = godotenv.Load()
 	if err != nil {
-		fmt.Println("Could not open log file")
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			LogError(err.Error(), line, file)
+		}
+	}
+	logfile, err = os.OpenFile(os.Getenv("LOG_FILE"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			fmt.Println("Error opening log file:", err)
+			LogError(err.Error(), line, file)
+		}
 	}
 }
 
@@ -44,6 +59,7 @@ func LogInfo(msg string, line int, file string) {
 		File:      file,
 		Line:      line,
 		Timestamp: time.Now().Unix(),
+		UserID:    os.Getuid(),
 	}
 	jsonData, _ := json.Marshal(entry)
 	go jsonWrite(jsonData)
@@ -56,6 +72,7 @@ func LogDebug(msg string, line int, file string) {
 		File:      file,
 		Line:      line,
 		Timestamp: time.Now().Unix(),
+		UserID:    os.Getuid(),
 	}
 	jsonData, _ := json.Marshal(entry)
 	go jsonWrite(jsonData)
@@ -68,6 +85,7 @@ func LogError(msg string, line int, file string) {
 		File:      file,
 		Line:      line,
 		Timestamp: time.Now().Unix(),
+		UserID:    os.Getuid(),
 	}
 	jsonData, _ := json.Marshal(entry)
 	go jsonWrite(jsonData)
@@ -80,6 +98,7 @@ func LogFatal(msg string, line int, file string) {
 		File:      file,
 		Line:      line,
 		Timestamp: time.Now().Unix(),
+		UserID:    os.Getuid(),
 	}
 	jsonData, _ := json.Marshal(entry)
 	go jsonWrite(jsonData)
@@ -92,6 +111,7 @@ func LogCritical(msg string, line int, file string) {
 		File:      file,
 		Line:      line,
 		Timestamp: time.Now().Unix(),
+		UserID:    os.Getuid(),
 	}
 	jsonData, _ := json.Marshal(entry)
 	go jsonWrite(jsonData)
@@ -104,6 +124,7 @@ func LogHTTP(msg string, line int, file string) {
 		File:      file,
 		Line:      line,
 		Timestamp: time.Now().Unix(),
+		UserID:    os.Getuid(),
 	}
 	jsonData, _ := json.Marshal(entry)
 	go jsonWrite(jsonData)
@@ -120,6 +141,7 @@ func HttpEchoMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			UserAgent: c.Request().UserAgent(),
 			IP:        c.RealIP(),
 			Time:      time.Now().Unix(),
+			UserID:    os.Getuid(),
 		}
 		jsonData, _ := json.Marshal(entry)
 		go jsonWrite(jsonData)

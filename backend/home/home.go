@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"net/http"
 	"os"
+	"runtime"
 
 	"globalbans/backend/auth"
+	"globalbans/backend/logs"
 
 	"github.com/labstack/echo/v4"
 )
@@ -52,8 +53,10 @@ func RenderPage(c echo.Context, page string, data map[string]interface{}) error 
 	renderer := c.Get("renderer").(*TemplateRenderer)
 	err := renderer.Render(c.Response().Writer, page, data, c)
 	if err != nil {
-		fmt.Println("Error executing template:", err)
-		return c.String(http.StatusInternalServerError, err.Error())
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 	return nil
 }
