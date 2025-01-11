@@ -5,9 +5,13 @@ import (
 	"globalbans/backend/auth"
 	"globalbans/backend/bans"
 	"globalbans/backend/home"
+	"globalbans/backend/stats"
 	"globalbans/integration/minecraft"
 	"globalbans/integration/ping"
 	"globalbans/integration/source"
+	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -55,6 +59,20 @@ func Routes(e *echo.Echo) {
 	})
 	e.GET("/api/server/ingest/bans", func(c echo.Context) error {
 		return bans.IngestBans(c)
+	})
+	e.GET("/api/stats/weekly", func(c echo.Context) error {
+		statsData := stats.GetWeeklyStats()
+		return c.JSON(http.StatusOK, statsData)
+	})
+	e.POST("/api/stats/weekly", func(c echo.Context) error {
+		bansStr := c.QueryParam("bans")
+		bans, err := strconv.Atoi(bansStr)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, "Invalid bans value")
+		}
+		day := time.Now()
+		stats.PlusWeeklyBan(bans, day)
+		return c.JSON(http.StatusOK, "Success")
 	})
 
 	minecraft.Routes(e)

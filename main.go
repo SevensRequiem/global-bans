@@ -3,13 +3,10 @@ package main
 import (
 	"log"
 	"os"
-	"time"
 
 	"globalbans/backend/discord"
 	"globalbans/backend/home"
 	"globalbans/backend/routes"
-
-	schedule "globalbans/backend/scheduler"
 
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
@@ -46,22 +43,7 @@ func main() {
 	e.Use(middleware.CORS())
 	e.Use(middleware.Gzip())
 	e.Use(middleware.Secure())
-	e.Use(middleware.CSRFWithConfig(middleware.CSRFConfig{
-		TokenLookup:    "form:_csrf,header:X-CSRF-Token",
-		CookieMaxAge:   86400,
-		CookieSecure:   true,
-		CookieHTTPOnly: false,
-		CookieName:     "_csrf",
-	}))
 
-	s := schedule.NewScheduler()
-	s.ScheduleTask(schedule.Task{
-		Action: func() {
-			// some function
-		},
-		Duration: 24 * time.Hour,
-	})
-	go s.Run()
 	routes.Routes(e)
 	go discord.Start()
 	e.Logger.Fatal(e.StartTLS(":8888", "certificates/cert.crt", "certificates/key.pem"))

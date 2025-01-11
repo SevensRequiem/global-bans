@@ -61,6 +61,7 @@ func init() {
 		DB_Main.CreateCollection(context.Background(), "firewalls")
 		DB_Main.CreateCollection(context.Background(), "filesyncs")
 		DB_Main.CreateCollection(context.Background(), "rcons")
+		DB_Main.CreateCollection(context.Background(), "stats")
 	} else {
 		_, file, line, ok := runtime.Caller(1)
 		if ok {

@@ -95,3 +95,12 @@ type RCON struct {
 }
 
 ////////////////////////////////////////
+
+type Server struct {
+	ID          string    `json:"id" bson:"_id"`
+	IP          string    `json:"ip" bson:"ip"`
+	Port        string    `json:"port" bson:"port"`
+	UUID        string    `json:"uuid" bson:"uuid"`
+	DateCreated time.Time `json:"date_created" bson:"date_created"`
+	Game        string    `json:"game" bson:"game"`
+}

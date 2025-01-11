@@ -61,6 +61,63 @@
         
 
 </script>
+<section id="stats">
+    <h2>Stats</h2>
+    <div id="stats-inner">
+    </div>
+    <div id="stats-weekly-bar"></div>
+</section>
+<script>
+    fetch('/api/stats/weekly')
+        .then(response => response.json())
+        .then(data => {
+            const stats = document.getElementById('stats-inner');
+            const statsWeeklyBar = document.getElementById('stats-weekly-bar');
+            stats.innerHTML = '';
+            data.forEach(stat => {
+                const statElement = document.createElement('div');
+                statElement.classList.add('stat');
+                statElement.innerHTML = `
+                    <h3>${stat.date}</h3>
+                    <span>${stat.players_banned}</span>
+                `;
+                stats.appendChild(statElement);
+                const statWeeklyBarElement = document.createElement('div');
+            });
+        });
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<canvas id="weekly-stats-chart" width="400" height="100"></canvas>
+<script>
+    const labels = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',];
+    const data = {
+      labels: labels,
+      datasets: [{
+        label: 'Players Banned',
+        data: [65, 59, 80, 81, 56, 55, 40],
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        borderColor: 'rgb(75, 192, 192)',
+        borderWidth: 1
+      }]
+    };
+    const config = {
+      type: 'bar',
+      data: data,
+      options: {
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    };
+    const weeklyStatsChart = new Chart(
+      document.getElementById('weekly-stats-chart'),
+      config
+    );
+</script>
+<!-- ...existing code... -->
 <style>
     #about {
         margin-bottom: 2rem;
@@ -150,14 +207,17 @@
     }
 
     #latest-bans {
-        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
-
     .bans-inner {
         display: flex;
         flex-wrap: wrap;
         justify-content: center;
         gap: 1rem;
+        max-height: 400px;
+        overflow-y: auto;
     }
 
     .ban {
