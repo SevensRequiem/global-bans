@@ -46,21 +46,20 @@ type Config struct {
 ////////////////////////////////////////
 
 type Ban struct {
-	ID          string `json:"id" bson:"_id"`
-	IP          string `json:"ip" bson:"ip"`
-	SteamID     string `json:"steamid" bson:"steamid"`
-	DiscordID   string `json:"discordid" bson:"discordid"`
-	MinecraftID string `json:"minecraftid" bson:"minecraftid"`
-	MiscID      string `json:"miscid" bson:"miscid"`
-	Username    string `json:"username" bson:"username"`
-	Reason      string `json:"reason" bson:"reason"`
-	Admin       string `json:"admin" bson:"admin"`
-	Game        string `json:"game" bson:"game"`
-	DateBanned  string `json:"date_banned" bson:"date_banned"`
-	Expires     string `json:"expires" bson:"expires"`
-	ServerIP    string `json:"server_ip" bson:"server_ip"`
-	ServerPort  string `json:"server_port" bson:"server_port"`
-	ServerUUID  string `json:"server_uuid" bson:"server_uuid"`
+	ID                  string    `json:"id" bson:"_id"`
+	IP                  string    `json:"ip" bson:"ip"`
+	ServerUUID          string    `json:"server_uuid" bson:"server_uuid"`
+	Reason              string    `json:"reason" bson:"reason"`
+	Admin               string    `json:"admin" bson:"admin"`
+	DateBanned          time.Time `json:"date_banned" bson:"date_banned"`
+	Expires             time.Time `json:"expires" bson:"expires"`
+	Banned              bool      `json:"banned" bson:"banned,omitempty"`
+	Expired             bool      `json:"expired" bson:"expired,omitempty"`
+	Unbanned            bool      `json:"unbanned" bson:"unbanned,omitempty"`
+	Game                string    `json:"game,omitempty" bson:"game,omitempty"`
+	MinecraftPlayerUUID string    `json:"player_uuid,omitempty" bson:"player_uuid,omitempty"`
+	SteamID             string    `json:"steam_id,omitempty" bson:"steam_id,omitempty"`
+	Identifier          string    `json:"identifier,omitempty" bson:"identifier,omitempty"`
 }
 
 ////////////////////////////////////////

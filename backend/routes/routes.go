@@ -39,27 +39,23 @@ func Routes(e *echo.Echo) {
 	})
 
 	// API
-	e.GET("/api/bans", func(c echo.Context) error {
-		return bans.GetAllBans(c)
+	e.GET("/api/recentbans", func(c echo.Context) error {
+		return bans.GetRecentBans(c)
 	})
-	e.GET("/api/bans/search", func(c echo.Context) error {
-		return bans.SearchBans(c)
+	e.GET("/api/allbans", func(c echo.Context) error {
+		return bans.GetAllBansHandler(c)
 	})
-	e.GET("/api/ban/:id", func(c echo.Context) error {
-		return bans.GetBan(c)
+	//e.GET("/api/bans/search", func(c echo.Context) error {
+	//	return bans.SearchBans(c)
+	//})
+	e.POST("/api/ban/:type", func(c echo.Context) error {
+		return bans.CreateGlobalBan(c)
 	})
-	e.POST("/api/ban", func(c echo.Context) error {
-		return bans.CreateBan(c)
-	})
-	e.DELETE("/api/ban/:id", func(c echo.Context) error {
-		return bans.DeleteBan(c)
-	})
+
 	e.GET("/api/ping", func(c echo.Context) error {
 		return ping.Ping(c)
 	})
-	e.GET("/api/server/ingest/bans", func(c echo.Context) error {
-		return bans.IngestBans(c)
-	})
+
 	e.GET("/api/stats/weekly", func(c echo.Context) error {
 		statsData := stats.GetWeeklyStats()
 		return c.JSON(http.StatusOK, statsData)

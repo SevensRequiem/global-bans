@@ -55,14 +55,23 @@ func init() {
 
 	if DB_Main != nil {
 		DB_Main.CreateCollection(context.Background(), "config")
-		DB_Main.CreateCollection(context.Background(), "banned")
-		DB_Main.CreateCollection(context.Background(), "expired")
-		DB_Main.CreateCollection(context.Background(), "deleted")
 		DB_Main.CreateCollection(context.Background(), "firewalls")
 		DB_Main.CreateCollection(context.Background(), "filesyncs")
 		DB_Main.CreateCollection(context.Background(), "rcons")
 		DB_Main.CreateCollection(context.Background(), "stats")
-		DB_Main.CreateCollection(context.Background(), "servers")
+		DB_Main.CreateCollection(context.Background(), "recent_bans")
+		DB_Main.CreateCollection(context.Background(), "recent_expired")
+		DB_Main.CreateCollection(context.Background(), "ip_bans")
+		DB_Main.CreateCollection(context.Background(), "ip_expired")
+		DB_Main.CreateCollection(context.Background(), "minecraft_servers")
+		DB_Main.CreateCollection(context.Background(), "minecraft_bans")
+		DB_Main.CreateCollection(context.Background(), "minecraft_expired")
+		DB_Main.CreateCollection(context.Background(), "source_servers")
+		DB_Main.CreateCollection(context.Background(), "source_bans")
+		DB_Main.CreateCollection(context.Background(), "source_expired")
+		DB_Main.CreateCollection(context.Background(), "misc_servers")
+		DB_Main.CreateCollection(context.Background(), "misc_bans")
+		DB_Main.CreateCollection(context.Background(), "misc_expired")
 	} else {
 		_, file, line, ok := runtime.Caller(1)
 		if ok {

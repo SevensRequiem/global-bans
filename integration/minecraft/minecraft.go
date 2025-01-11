@@ -48,7 +48,7 @@ func Server(c echo.Context) error {
 	// Check if server with given IP and port exists
 	filter := bson.M{"ip": ip, "port": port}
 	var existingServer models.Server
-	err := database.DB_Main.Collection("servers").FindOne(context.TODO(), filter).Decode(&existingServer)
+	err := database.DB_Main.Collection("minecraft_servers").FindOne(context.TODO(), filter).Decode(&existingServer)
 
 	if err == mongo.ErrNoDocuments {
 		// Server doesn't exist, create new one
@@ -62,7 +62,7 @@ func Server(c echo.Context) error {
 			Game: "minecraft",
 		}
 
-		_, err = database.DB_Main.Collection("servers").InsertOne(context.TODO(), server)
+		_, err = database.DB_Main.Collection("minecraft_servers").InsertOne(context.TODO(), server)
 		if err != nil {
 			logs.LogError(fmt.Sprintf("Error inserting new server with IP %s and Port %s: %v", ip, port, err), 0, "integrations/minecraft.go")
 			return c.String(http.StatusInternalServerError, "Error inserting new server")
@@ -139,7 +139,7 @@ func SelfBanlist(c echo.Context) error {
 
 	// Get all self bans for the server
 	var selfBans []models.Ban
-	cursor, err := database.DB_Main.Collection("bans").Find(context.TODO(), filter)
+	cursor, err := database.DB_Main.Collection("minecraft_bans").Find(context.TODO(), filter)
 	if err != nil {
 		logs.LogError("Error querying the database", 0, "integrations/minecraft.go")
 		return c.String(http.StatusInternalServerError, "Error querying the database")
