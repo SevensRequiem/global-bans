@@ -60,6 +60,7 @@ type Ban struct {
 	Expires     string `json:"expires" bson:"expires"`
 	ServerIP    string `json:"server_ip" bson:"server_ip"`
 	ServerPort  string `json:"server_port" bson:"server_port"`
+	ServerUUID  string `json:"server_uuid" bson:"server_uuid"`
 }
 
 ////////////////////////////////////////

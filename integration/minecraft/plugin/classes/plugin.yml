@@ -1,4 +1,0 @@
-name: Global-Bans
-version: '0.01-ALPHA'
-main: org.sevensrequiem.globalBans.GlobalBans
-api-version: '1.21'
