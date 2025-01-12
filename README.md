@@ -6,6 +6,7 @@ Connect Global Bans to any Source game via a plugin
 
 ## Minecraft
 Connect Global Bans to any Minecraft Server via a plugin
+https://github.com/SevensRequiem/Global-Bans-MC-Plugin
 
 ## Misc Games
 Connect Global Bans to Misc games via RCON
