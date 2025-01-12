@@ -617,3 +617,58 @@ func CreateGlobalBan(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, "Ban created successfully")
 }
+
+func ExpireCheck(collectionName string) {
+	filter := bson.M{"expired": false, "expires": bson.M{"$lt": time.Now()}}
+	update := bson.M{"$set": bson.M{"expired": true}}
+	db := database.DB_Main.Collection(collectionName + "_bans")
+	_, err := db.UpdateMany(context.TODO(), filter, update)
+	if err != nil {
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
+	}
+	// move from _bans to _expired
+	bans, err := db.Find(context.TODO(), bson.M{"expired": true})
+	if err != nil {
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
+	}
+	defer bans.Close(context.TODO())
+	var count int
+	var banList []models.Ban
+	for bans.Next(context.TODO()) {
+		var ban models.Ban
+		err := bans.Decode(&ban)
+		if err != nil {
+			_, file, line, ok := runtime.Caller(1)
+			if ok {
+				logs.LogError(err.Error(), line, file)
+			}
+		}
+		banList = append(banList, ban)
+	}
+	if err != nil {
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
+	}
+	expired := database.DB_Main.Collection(collectionName + "_expired")
+	for _, ban := range banList {
+		count += 1
+		_, err = expired.InsertOne(context.TODO(), ban)
+		database.DB_Main.Collection("recent_expired").InsertOne(context.TODO(), ban)
+		if err != nil {
+			_, file, line, ok := runtime.Caller(1)
+			if ok {
+				logs.LogError(err.Error(), line, file)
+			}
+		}
+	}
+
+	logs.LogInfo(fmt.Sprintf("Expired '%v' %s bans", count, collectionName), 0, "bans/bans.go")
+}

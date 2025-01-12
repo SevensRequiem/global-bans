@@ -3,10 +3,13 @@ package main
 import (
 	"log"
 	"os"
+	"time"
 
+	"globalbans/backend/bans"
 	"globalbans/backend/discord"
 	"globalbans/backend/home"
 	"globalbans/backend/routes"
+	schedule "globalbans/backend/scheduler"
 
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
@@ -43,6 +46,18 @@ func main() {
 	e.Use(middleware.CORS())
 	e.Use(middleware.Gzip())
 	e.Use(middleware.Secure())
+
+	s30 := schedule.NewScheduler()
+	s30.ScheduleTask(schedule.Task{
+		Action: func() {
+			bans.ExpireCheck("minecraft")
+			bans.ExpireCheck("source")
+			bans.ExpireCheck("misc")
+			bans.ExpireCheck("ip")
+		},
+		Duration: 30 * time.Minute,
+	})
+	go s30.Run()
 
 	routes.Routes(e)
 	go discord.Start()
