@@ -8,12 +8,12 @@ import (
 	"runtime"
 
 	"globalbans/backend/auth"
+	"globalbans/backend/bans"
 	"globalbans/backend/logs"
 
 	"github.com/labstack/echo/v4"
 )
 
-// Renderer struct
 type TemplateRenderer struct {
 	templates *template.Template
 }
@@ -79,6 +79,7 @@ func globaldata(c echo.Context) map[string]interface{} {
 	data := make(map[string]interface{})
 	data["User"], _ = auth.GetCurrentUser(c)
 	data["IsAdmin"] = auth.AdminCheck(c)
+	data["IsBanned"] = bans.BannedCheck(c)
 	data["BASEURL"] = baseurl
 	data["csrf"] = c.Get("csrf")
 	return data

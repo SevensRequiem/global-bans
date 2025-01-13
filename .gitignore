@@ -30,3 +30,8 @@ go.work.sum
 # certs
 *.crt
 *.pem
+
+# Ignore folders
+.vscode/
+node_modules/
+dist/

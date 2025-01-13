@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/gob"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -265,24 +266,26 @@ func GetTotalUsers() int {
 	return int(count)
 }
 
-func GetCurrentUser(c echo.Context) (*models.User, error) {
+func GetCurrentUser(c echo.Context) (*models.LoggedInUser, error) {
 	sess, err := session.Get("session", c)
 	if err != nil {
 		_, file, line, ok := runtime.Caller(1)
 		if ok {
 			logs.LogError(err.Error(), line, file)
 		}
+		return nil, err
 	}
 
 	userSessionValue, ok := sess.Values["user"]
 	if !ok {
 		_, file, line, ok := runtime.Caller(1)
 		if ok {
-			logs.LogError(err.Error(), line, file)
+			logs.LogError("user not found in session", line, file)
 		}
+		return nil, errors.New("user not found in session")
 	}
 
-	user, ok := userSessionValue.(models.User)
+	user, ok := userSessionValue.(models.LoggedInUser)
 	if !ok {
 		_, file, line, ok := runtime.Caller(1)
 		if ok {
@@ -314,7 +317,7 @@ func CheckLoggedIn(c echo.Context) (*models.LoggedInUser, error) {
 		}
 	}
 
-	return &models.LoggedInUser{ID: user.ID, Username: user.Username, IsLoggedIn: true}, nil
+	return &models.LoggedInUser{ID: user.ID, Username: user.Username}, nil
 }
 
 func UpdateGroups(c echo.Context, userID string, groups string) error {

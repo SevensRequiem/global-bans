@@ -9,8 +9,8 @@ type User struct {
 	Groups      Group     `json:"groups" bson:"groups"`
 	DateCreated time.Time `json:"date_created" bson:"date_created"`
 	DateBanned  time.Time `json:"date_banned" bson:"date_banned"`
-	IsBanned    bool      `json:"is_banned" bson:"is_banned"`
-	IsPremium   bool      `json:"is_premium" bson:"is_premium"`
+	Banned      bool      `json:"is_banned" bson:"is_banned"`
+	Premium     bool      `json:"is_premium" bson:"is_premium"`
 	DoesExist   bool      `json:"does_exist" bson:"does_exist"`
 }
 
@@ -20,9 +20,8 @@ type LoggedInUser struct {
 	Groups      string    `json:"groups" bson:"groups"`
 	DateCreated time.Time `json:"date_created" bson:"date_created"`
 	DateBanned  time.Time `json:"date_banned" bson:"date_banned"`
-	IsLoggedIn  bool      `json:"is_logged_in" bson:"is_logged_in"`
-	IsPremium   bool      `json:"is_premium" bson:"is_premium"`
-	IsBanned    bool      `json:"is_banned" bson:"is_banned"`
+	Premium     bool      `json:"is_premium" bson:"is_premium"`
+	Banned      bool      `json:"is_banned" bson:"is_banned"`
 }
 
 type Group struct {
@@ -57,7 +56,7 @@ type Ban struct {
 	Expired             bool      `json:"expired" bson:"expired,omitempty"`
 	Unbanned            bool      `json:"unbanned" bson:"unbanned,omitempty"`
 	Game                string    `json:"game,omitempty" bson:"game,omitempty"`
-	MinecraftPlayerUUID string    `json:"player_uuid,omitempty" bson:"player_uuid,omitempty"`
+	MinecraftPlayerUUID string    `json:"minecraft_uuid,omitempty" bson:"minecraft_uuid,omitempty"`
 	SteamID             string    `json:"steam_id,omitempty" bson:"steam_id,omitempty"`
 	Identifier          string    `json:"identifier,omitempty" bson:"identifier,omitempty"`
 }
@@ -100,7 +99,7 @@ type Server struct {
 	ID          string    `json:"id" bson:"_id"`
 	IP          string    `json:"ip" bson:"ip"`
 	Port        string    `json:"port" bson:"port"`
-	UUID        string    `json:"uuid" bson:"uuid"`
+	ServerID    string    `json:"server_id" bson:"server_id"`
 	DateCreated time.Time `json:"date_created" bson:"date_created"`
 	Game        string    `json:"game" bson:"game"`
 }

@@ -6,6 +6,7 @@ import (
 	"globalbans/backend/bans"
 	"globalbans/backend/home"
 	"globalbans/backend/stats"
+	"globalbans/backend/user"
 	"globalbans/integration/minecraft"
 	"globalbans/integration/ping"
 	"globalbans/integration/source"
@@ -18,9 +19,9 @@ import (
 
 func Routes(e *echo.Echo) {
 	// Home
-	e.GET("/", func(c echo.Context) error {
-		return home.HomeHandler(c)
-	})
+	e.Static("/", "frontend/static")
+	e.Static("/static", "frontend/static")
+	e.Static("/assets", "frontend/assets")
 	e.GET("/home", func(c echo.Context) error {
 		return home.HomeHandler(c)
 	})
@@ -39,18 +40,6 @@ func Routes(e *echo.Echo) {
 	})
 
 	// API
-	e.GET("/api/recentbans", func(c echo.Context) error {
-		return bans.GetRecentBans(c)
-	})
-	e.GET("/api/allbans", func(c echo.Context) error {
-		return bans.GetAllBansHandler(c)
-	})
-	//e.GET("/api/bans/search", func(c echo.Context) error {
-	//	return bans.SearchBans(c)
-	//})
-	e.POST("/api/ban/:type", func(c echo.Context) error {
-		return bans.CreateGlobalBan(c)
-	})
 
 	e.GET("/api/ping", func(c echo.Context) error {
 		return ping.Ping(c)
@@ -73,4 +62,6 @@ func Routes(e *echo.Echo) {
 
 	minecraft.Routes(e)
 	source.Routes(e)
+	bans.Routes(e)
+	user.Routes(e)
 }

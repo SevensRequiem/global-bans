@@ -20,6 +20,16 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+func Routes(e *echo.Echo) {
+	e.GET("/api/bans/recent", GetRecentBans)
+	e.GET("/api/bans/ip", GetIPBans)
+	e.GET("/api/bans/source", GetSourceBans)
+	e.GET("/api/bans/minecraft", GetMinecraftBans)
+	e.GET("/api/bans/misc", GetMiscBans)
+	e.GET("/api/bans/all", GetAllBansHandler)
+	e.POST("/api/bans/create/:type", CreateGlobalBan)
+}
+
 func GetRecentBans(c echo.Context) error {
 	limit := c.QueryParam("limit")
 	if limit == "" {
@@ -483,6 +493,20 @@ func GetAllBansHandler(c echo.Context) error {
 	cacheTimestamp = time.Now()
 
 	return c.JSON(http.StatusOK, cacheData)
+}
+
+func BannedCheck(c echo.Context) bool {
+	bans, err := getAllBans(c)
+	if err != nil {
+		logs.LogError("Error fetching bans", 0, "bans/bans.go")
+		return false
+	}
+	for _, ban := range bans {
+		if ban.IP == c.RealIP() {
+			return true
+		}
+	}
+	return false
 }
 
 func CreateGlobalBan(c echo.Context) error {

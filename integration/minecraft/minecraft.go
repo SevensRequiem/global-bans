@@ -45,6 +45,7 @@ func Ping(c echo.Context) error {
 }
 
 func Ban(c echo.Context) error {
+	playerIP := c.QueryParam("playerip")
 	player := c.QueryParam("player")
 	reason := c.QueryParam("reason")
 	expires := c.QueryParam("expires")
@@ -56,25 +57,22 @@ func Ban(c echo.Context) error {
 	}
 
 	// Check if server with given UUID exists
-	filter := bson.M{"uuid": serverUUID}
+	filter := bson.M{"server_id": serverUUID}
 	var existingServer models.Server
-	err := database.DB_Main.Collection("servers").FindOne(context.TODO(), filter).Decode(&existingServer)
+	err := database.DB_Main.Collection("minecraft_servers").FindOne(context.TODO(), filter).Decode(&existingServer)
 	if err == mongo.ErrNoDocuments {
 		return c.String(http.StatusNotFound, "Server not found")
 	} else if err != nil {
-		logs.LogError("Error querying the database", 0, "integrations/minecraft.go")
+		logs.LogError("Error querying the database", 0, err.Error())
 		return c.String(http.StatusInternalServerError, "Error querying the database")
 	}
 
 	// Check if player is already banned
 	filter = bson.M{"player": player, "server_uuid": serverUUID}
 	var existingBan models.Ban
-	err = database.DB_Main.Collection("bans").FindOne(context.TODO(), filter).Decode(&existingBan)
+	err = database.DB_Main.Collection("minecraft_bans").FindOne(context.TODO(), filter).Decode(&existingBan)
 	if err != mongo.ErrNoDocuments {
 		return c.String(http.StatusConflict, "Player is already banned")
-	} else if err != nil {
-		logs.LogError("Error querying the database", 0, "integrations/minecraft.go")
-		return c.String(http.StatusInternalServerError, "Error querying the database")
 	}
 
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://playerdb.co/api/player/minecraft/%s", player), nil)
@@ -117,7 +115,7 @@ func Ban(c echo.Context) error {
 	if playerData.Data.Player.Username == "" {
 		return c.String(http.StatusNotFound, "Player not found")
 	}
-	parsedExpires, err := time.Parse("2006-01-02 15:04:05", expires)
+	parsedExpires, err := time.Parse("2006-01-02", expires)
 	if err != nil {
 		logs.LogError(fmt.Sprintf("Error parsing expiration date: %v", err), 0, "integrations/minecraft.go")
 		return c.String(http.StatusInternalServerError, "Error parsing expiration date")
@@ -125,12 +123,15 @@ func Ban(c echo.Context) error {
 	uuid := uuid.New().String()
 	ban := models.Ban{
 		ID:                  uuid,
+		IP:                  playerIP,
 		Identifier:          player,
 		Reason:              reason,
 		Expires:             parsedExpires,
 		Admin:               admin,
 		ServerUUID:          serverUUID,
 		MinecraftPlayerUUID: playerData.Data.Player.ID,
+		Game:                "minecraft",
+		Banned:              true,
 	}
 
 	_, err = database.DB_Main.Collection("minecraft_bans").InsertOne(context.TODO(), ban)
@@ -164,11 +165,11 @@ func Server(c echo.Context) error {
 		uuid := uuid.New().String()
 
 		server := models.Server{
-			ID:   uuid,
-			IP:   ip,
-			Port: port,
-			UUID: uuid,
-			Game: "minecraft",
+			ID:       uuid,
+			IP:       ip,
+			Port:     port,
+			ServerID: uuid,
+			Game:     "minecraft",
 		}
 
 		_, err = database.DB_Main.Collection("minecraft_servers").InsertOne(context.TODO(), server)
@@ -187,7 +188,7 @@ func Server(c echo.Context) error {
 	}
 
 	// If the server exists, return its UUID
-	return c.String(http.StatusOK, existingServer.UUID)
+	return c.String(http.StatusOK, existingServer.ServerID)
 }
 
 func Banlist(c echo.Context) error {
@@ -201,7 +202,7 @@ func Banlist(c echo.Context) error {
 	// Check if server with given UUID exists
 	filter := bson.M{"server_uuid": uuid}
 	var existingServer models.Server
-	err := database.DB_Main.Collection("servers").FindOne(context.TODO(), filter).Decode(&existingServer)
+	err := database.DB_Main.Collection("minecraft_servers").FindOne(context.TODO(), filter).Decode(&existingServer)
 
 	if err == mongo.ErrNoDocuments {
 		return c.String(http.StatusNotFound, "Server not found")
@@ -237,7 +238,7 @@ func SelfBanlist(c echo.Context) error {
 	// Check if server with given UUID exists
 	filter := bson.M{"server_uuid": uuid}
 	var existingServer models.Server
-	err := database.DB_Main.Collection("servers").FindOne(context.TODO(), filter).Decode(&existingServer)
+	err := database.DB_Main.Collection("minecraft_bans").FindOne(context.TODO(), filter).Decode(&existingServer)
 
 	if err == mongo.ErrNoDocuments {
 		return c.String(http.StatusNotFound, "Server not found")
