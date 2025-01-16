@@ -8,8 +8,10 @@ import (
 	"globalbans/backend/global"
 	"globalbans/backend/logs"
 	"globalbans/backend/models"
+	"globalbans/backend/serverauth"
 	"net/http"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/google/uuid"
@@ -33,18 +35,24 @@ func Routes(e *echo.Echo) {
 	})
 
 	e.POST("/api/minecraft/ban", func(c echo.Context) error {
-		return Ban(c)
+		return MinecraftBan(c)
 	})
 }
 
 func Ping(c echo.Context) error {
+	if !serverauth.ValidateAPIKey(c) {
+		return c.String(http.StatusUnauthorized, "Invalid API key")
+	}
 	ip := c.QueryParam("ip")
 	port := c.QueryParam("port")
 	logs.LogHTTP(fmt.Sprintf("Minecraft Ping %s:%s", ip, port), 0, "integrations/minecraft.go")
 	return c.String(http.StatusOK, "Pong")
 }
 
-func Ban(c echo.Context) error {
+func MinecraftBan(c echo.Context) error {
+	if !serverauth.ValidateAPIKey(c) {
+		return c.String(http.StatusUnauthorized, "Invalid API key")
+	}
 	playerIP := c.QueryParam("playerip")
 	player := c.QueryParam("player")
 	reason := c.QueryParam("reason")
@@ -56,18 +64,21 @@ func Ban(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "Invalid parameters")
 	}
 
-	// Check if server with given UUID exists
 	filter := bson.M{"server_id": serverUUID}
 	var existingServer models.Server
 	err := database.DB_Main.Collection("minecraft_servers").FindOne(context.TODO(), filter).Decode(&existingServer)
 	if err == mongo.ErrNoDocuments {
 		return c.String(http.StatusNotFound, "Server not found")
 	} else if err != nil {
-		logs.LogError("Error querying the database", 0, err.Error())
+		if err != nil {
+			_, file, line, ok := runtime.Caller(1)
+			if ok {
+				logs.LogError(err.Error(), line, file)
+			}
+		}
 		return c.String(http.StatusInternalServerError, "Error querying the database")
 	}
 
-	// Check if player is already banned
 	filter = bson.M{"player": player, "server_uuid": serverUUID}
 	var existingBan models.Ban
 	err = database.DB_Main.Collection("minecraft_bans").FindOne(context.TODO(), filter).Decode(&existingBan)
@@ -77,8 +88,10 @@ func Ban(c echo.Context) error {
 
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://playerdb.co/api/player/minecraft/%s", player), nil)
 	if err != nil {
-		logs.LogError(fmt.Sprintf("Error creating request to PlayerDB: %v", err), 0, "integrations/minecraft.go")
-		return c.String(http.StatusInternalServerError, "Error creating request to PlayerDB")
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	req.Header.Set("User-Agent", "GlobalBans "+global.GetVersion()+" - "+os.Getenv("BASE_URL"))
@@ -86,8 +99,10 @@ func Ban(c echo.Context) error {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		logs.LogError(fmt.Sprintf("Error sending request to PlayerDB: %v", err), 0, "integrations/minecraft.go")
-		return c.String(http.StatusInternalServerError, "Error sending request to PlayerDB")
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 	defer resp.Body.Close()
 
@@ -108,8 +123,10 @@ func Ban(c echo.Context) error {
 
 	err = json.NewDecoder(resp.Body).Decode(&playerData)
 	if err != nil {
-		logs.LogError(fmt.Sprintf("Error decoding PlayerDB response: %v", err), 0, "integrations/minecraft.go")
-		return c.String(http.StatusInternalServerError, "Error decoding PlayerDB response")
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	if playerData.Data.Player.Username == "" {
@@ -117,8 +134,10 @@ func Ban(c echo.Context) error {
 	}
 	parsedExpires, err := time.Parse("2006-01-02", expires)
 	if err != nil {
-		logs.LogError(fmt.Sprintf("Error parsing expiration date: %v", err), 0, "integrations/minecraft.go")
-		return c.String(http.StatusInternalServerError, "Error parsing expiration date")
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 	uuid := uuid.New().String()
 	ban := models.Ban{
@@ -136,8 +155,17 @@ func Ban(c echo.Context) error {
 
 	_, err = database.DB_Main.Collection("minecraft_bans").InsertOne(context.TODO(), ban)
 	if err != nil {
-		logs.LogError(fmt.Sprintf("Error inserting new ban: %v", err), 0, "integrations/minecraft.go")
-		return c.String(http.StatusInternalServerError, "Error inserting new ban")
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
+	}
+	_, err = database.DB_Main.Collection("recent_bans").InsertOne(context.TODO(), ban)
+	if err != nil {
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{
@@ -147,21 +175,21 @@ func Ban(c echo.Context) error {
 }
 
 func Server(c echo.Context) error {
+	if !serverauth.ValidateAPIKey(c) {
+		return c.String(http.StatusUnauthorized, "Invalid API key")
+	}
 	ip := c.QueryParam("ip")
 	port := c.QueryParam("port")
 
-	// Validate parameters
 	if ip == "" || port == "" {
 		return c.String(http.StatusBadRequest, "IP and port must be provided")
 	}
 
-	// Check if server with given IP and port exists
 	filter := bson.M{"ip": ip, "port": port}
 	var existingServer models.Server
 	err := database.DB_Main.Collection("minecraft_servers").FindOne(context.TODO(), filter).Decode(&existingServer)
 
 	if err == mongo.ErrNoDocuments {
-		// Server doesn't exist, create new one
 		uuid := uuid.New().String()
 
 		server := models.Server{
@@ -183,8 +211,10 @@ func Server(c echo.Context) error {
 			"message": "Server created successfully",
 		})
 	} else if err != nil {
-		logs.LogError("Error querying the database", 0, "integrations/minecraft.go")
-		return c.String(http.StatusInternalServerError, "Error querying the database")
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	// If the server exists, return its UUID
@@ -192,6 +222,9 @@ func Server(c echo.Context) error {
 }
 
 func Banlist(c echo.Context) error {
+	if !serverauth.ValidateAPIKey(c) {
+		return c.String(http.StatusUnauthorized, "Invalid API key")
+	}
 	uuid := c.QueryParam("uuid")
 
 	// Validate parameters
@@ -207,27 +240,35 @@ func Banlist(c echo.Context) error {
 	if err == mongo.ErrNoDocuments {
 		return c.String(http.StatusNotFound, "Server not found")
 	} else if err != nil {
-		logs.LogError("Error querying the database", 0, "integrations/minecraft.go")
-		return c.String(http.StatusInternalServerError, "Error querying the database")
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
-
 	// Get all bans for the server
 	var bans []models.Ban
 	cursor, err := database.DB_Main.Collection("bans").Find(context.TODO(), bson.M{})
 	if err != nil {
-		logs.LogError("Error querying the database", 0, "integrations/minecraft.go")
-		return c.String(http.StatusInternalServerError, "Error querying the database")
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	if err = cursor.All(context.Background(), &bans); err != nil {
-		logs.LogError("Error decoding bans", 0, "integrations/minecraft.go")
-		return c.String(http.StatusInternalServerError, "Error decoding bans")
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	return c.JSON(http.StatusOK, bans)
 }
 
 func SelfBanlist(c echo.Context) error {
+	if !serverauth.ValidateAPIKey(c) {
+		return c.String(http.StatusUnauthorized, "Invalid API key")
+	}
 	uuid := c.QueryParam("uuid")
 
 	// Validate parameters
@@ -243,21 +284,27 @@ func SelfBanlist(c echo.Context) error {
 	if err == mongo.ErrNoDocuments {
 		return c.String(http.StatusNotFound, "Server not found")
 	} else if err != nil {
-		logs.LogError("Error querying the database", 0, "integrations/minecraft.go")
-		return c.String(http.StatusInternalServerError, "Error querying the database")
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	// Get all self bans for the server
 	var selfBans []models.Ban
 	cursor, err := database.DB_Main.Collection("minecraft_bans").Find(context.TODO(), filter)
 	if err != nil {
-		logs.LogError("Error querying the database", 0, "integrations/minecraft.go")
-		return c.String(http.StatusInternalServerError, "Error querying the database")
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	if err = cursor.All(context.Background(), &selfBans); err != nil {
-		logs.LogError("Error decoding self bans", 0, "integrations/minecraft.go")
-		return c.String(http.StatusInternalServerError, "Error decoding self bans")
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
 	}
 
 	return c.JSON(http.StatusOK, selfBans)

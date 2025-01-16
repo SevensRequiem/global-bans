@@ -7,12 +7,12 @@ import (
 	"runtime"
 	"sort"
 	"strconv"
-	"sync"
 	"time"
 
 	"globalbans/backend/database"
 	"globalbans/backend/logs"
 	"globalbans/backend/models"
+	"globalbans/backend/serverauth"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -26,7 +26,13 @@ func Routes(e *echo.Echo) {
 	e.GET("/api/bans/source", GetSourceBans)
 	e.GET("/api/bans/minecraft", GetMinecraftBans)
 	e.GET("/api/bans/misc", GetMiscBans)
-	e.GET("/api/bans/all", GetAllBansHandler)
+	e.GET("/api/bans/all", func(c echo.Context) error {
+		bans, err := getAllBans(c)
+		if err != nil {
+			return c.String(http.StatusInternalServerError, "Error fetching bans")
+		}
+		return c.JSON(http.StatusOK, bans)
+	})
 	e.POST("/api/bans/create/:type", CreateGlobalBan)
 }
 
@@ -94,6 +100,9 @@ func GetRecentBans(c echo.Context) error {
 }
 
 func GetIPBans(c echo.Context) error {
+	if !serverauth.ValidateAPIKey(c) {
+		return c.String(http.StatusUnauthorized, "Invalid API key")
+	}
 	limit := c.QueryParam("limit")
 	if limit == "" {
 		limit = "100"
@@ -157,6 +166,9 @@ func GetIPBans(c echo.Context) error {
 }
 
 func GetSourceBans(c echo.Context) error {
+	if !serverauth.ValidateAPIKey(c) {
+		return c.String(http.StatusUnauthorized, "Invalid API key")
+	}
 	limit := c.QueryParam("limit")
 	if limit == "" {
 		limit = "100"
@@ -220,6 +232,9 @@ func GetSourceBans(c echo.Context) error {
 }
 
 func GetMinecraftBans(c echo.Context) error {
+	if !serverauth.ValidateAPIKey(c) {
+		return c.String(http.StatusUnauthorized, "Invalid API key")
+	}
 	limit := c.QueryParam("limit")
 	if limit == "" {
 		limit = "100"
@@ -283,6 +298,9 @@ func GetMinecraftBans(c echo.Context) error {
 }
 
 func GetMiscBans(c echo.Context) error {
+	if !serverauth.ValidateAPIKey(c) {
+		return c.String(http.StatusUnauthorized, "Invalid API key")
+	}
 	limit := c.QueryParam("limit")
 	if limit == "" {
 		limit = "100"
@@ -346,6 +364,9 @@ func GetMiscBans(c echo.Context) error {
 }
 
 func getAllBans(c echo.Context) ([]models.Ban, error) {
+	if !serverauth.ValidateAPIKey(c) {
+		return nil, c.String(http.StatusUnauthorized, "Invalid API key")
+	}
 	limit := c.QueryParam("limit")
 	if limit == "" {
 		limit = "100"
@@ -406,6 +427,15 @@ func getAllBans(c echo.Context) ([]models.Ban, error) {
 		}
 	}
 
+	fail2banbans, err := database.DB_Main.Collection("fail2ban_bans").Find(context.TODO(), bson.M{}, findOptions)
+	if err != nil {
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
+	}
+
+	defer fail2banbans.Close(context.TODO())
 	defer ipbans.Close(context.TODO())
 	defer sourcebans.Close(context.TODO())
 	defer minecraftbans.Close(context.TODO())
@@ -456,6 +486,17 @@ func getAllBans(c echo.Context) ([]models.Ban, error) {
 		}
 		banList = append(banList, ban)
 	}
+	for fail2banbans.Next(context.TODO()) {
+		var ban models.Ban
+		err := fail2banbans.Decode(&ban)
+		if err != nil {
+			_, file, line, ok := runtime.Caller(1)
+			if ok {
+				logs.LogError(err.Error(), line, file)
+			}
+		}
+		banList = append(banList, ban)
+	}
 
 	if err != nil {
 		_, file, line, ok := runtime.Caller(1)
@@ -469,30 +510,6 @@ func getAllBans(c echo.Context) ([]models.Ban, error) {
 	})
 
 	return banList, nil
-}
-
-var (
-	cacheData      []models.Ban
-	cacheTimestamp time.Time
-	cacheMutex     sync.Mutex
-	cacheDuration  = 5 * time.Minute
-)
-
-func GetAllBansHandler(c echo.Context) error {
-	cacheMutex.Lock()
-	defer cacheMutex.Unlock()
-	if time.Since(cacheTimestamp) < cacheDuration {
-		return c.JSON(http.StatusOK, cacheData)
-	}
-	data, err := getAllBans(c)
-	if err != nil {
-		logs.LogError("Error fetching bans", 0, "bans/bans.go")
-		return c.String(http.StatusInternalServerError, "Error fetching bans")
-	}
-	cacheData = data
-	cacheTimestamp = time.Now()
-
-	return c.JSON(http.StatusOK, cacheData)
 }
 
 func BannedCheck(c echo.Context) bool {
@@ -510,6 +527,9 @@ func BannedCheck(c echo.Context) bool {
 }
 
 func CreateGlobalBan(c echo.Context) error {
+	if !serverauth.ValidateAPIKey(c) {
+		return c.String(http.StatusUnauthorized, "Invalid API key")
+	}
 	banType := c.Param("type")
 
 	logs.LogInfo(fmt.Sprintf("Received request to create a %s ban", banType), 0, "bans/bans.go")
@@ -695,4 +715,45 @@ func ExpireCheck(collectionName string) {
 	}
 
 	logs.LogInfo(fmt.Sprintf("Expired '%v' %s bans", count, collectionName), 0, "bans/bans.go")
+}
+
+func BanCount() int {
+	ipbans, err := database.DB_Main.Collection("ip_bans").CountDocuments(context.TODO(), bson.M{})
+	if err != nil {
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
+	}
+	sourcebans, err := database.DB_Main.Collection("source_bans").CountDocuments(context.TODO(), bson.M{})
+	if err != nil {
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
+	}
+	minecraftbans, err := database.DB_Main.Collection("minecraft_bans").CountDocuments(context.TODO(), bson.M{})
+	if err != nil {
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
+	}
+	miscbans, err := database.DB_Main.Collection("misc_bans").CountDocuments(context.TODO(), bson.M{})
+	if err != nil {
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
+	}
+	fail2banbans, err := database.DB_Main.Collection("fail2ban_bans").CountDocuments(context.TODO(), bson.M{})
+	if err != nil {
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
+	}
+
+	count := ipbans + sourcebans + minecraftbans + miscbans + fail2banbans
+	return int(count)
 }

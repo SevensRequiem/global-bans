@@ -1,0 +1,100 @@
+{{define "content"}}
+<section id="home">
+    <section id="home-top">
+    <div id="hero">
+        <h1>Global Bans</h1>
+        <p>Keep your server(s) safe with global bans.</p>
+        <a href="/docs" class="btn-primary">Get Started</a>
+    </div>
+    <div id="features">
+        <div class="feature">
+            <i class="fa-solid fa-shield-heart fa-2xl"></i>
+            <h2>Secure</h2>
+            <p>Keep your server(s) safe with global bans.</p>
+        </div>
+        <div class="feature">
+            <i class="fa-solid fa-globe fa-2xl"></i>
+            <h2>Global</h2>
+            <p>View bans from all servers in one place.</p>
+        </div>
+        <div class="feature">
+            <i class="fa-brands fa-github fa-2xl"></i>
+            <h2>Open Source</h2>
+            <p>View the source code on GitHub.</p>
+        </div>
+    </div>
+    </section>
+
+    <section id="home-bottom">
+    <div id="geo-map">
+    </div>
+</section>
+<style>
+    #home {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #eeeeee;
+        width: 100%;
+    }
+
+    #hero {
+        text-align: center;
+        padding: 2em;
+    }
+
+    #hero h1 {
+        font-size: 3em;
+    }
+
+    #hero p {
+        font-size: 1.5em;
+    }
+
+    #features {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .feature {
+        text-align: center;
+        padding: 2em;
+        width: 30%;
+    }
+
+    .feature i {
+        font-size: 4em;
+    }
+
+    .feature h2 {
+        font-size: 2em;
+    }
+
+    .feature p {
+        font-size: 1em;
+    }
+
+    .fa-github {
+        color: #2b3137;
+    }
+
+    .fa-github:hover {
+        color: #6fbe2e;
+    }
+
+    .fa-globe {
+        color: #0080ff;
+    }
+
+    .fa-globe:hover {
+        color: #6fbe2e;
+    }
+
+    .fa-shield-heart {
+        color: #ff004c;
+    }
+    
+</style>
+{{end}}

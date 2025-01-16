@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+  <link href="/assets/css/base.css" rel="stylesheet">
+  <script src="https://kit.fontawesome.com/c0dbd754ad.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <meta name="csrf" content="{{.csrf}}">
+  <title>Global Bans {{.Pagename}}</title>
+</head>
+
+<body>
+  <div id="loader">
+    Loading
+  </div>
+  <script>
+    window.addEventListener('load', function () {
+      const loader = document.getElementById('loader');
+      loader.style.display = 'none';
+    });
+  </script>
+  <header>
+    <div id="title">
+      <img src="/assets/logo.svg" alt="logo" width="50" height="50">
+      <h1>Global Bans</h1>
+    </div>
+    <nav>
+      <a href="/"><i class="fas fa-home"></i>
+        Home</a>
+      <a href="/bans"><i class="fas fa-ban"></i>
+        Bans</a>
+      <a href="/players"><i class="fas fa-users"></i>
+        Appeal</a>
+      <a href="/servers"><i class="fas fa-server"></i>
+        Servers</a>
+      <a href="/docs"><i class="fas fa-book"></i>
+        Docs</a>
+    </nav>
+    <nav>
+      {{if .Auth}}
+      {{if .IsAdmin }}
+      <a href="/admin" class="btn-secondary">Admin</a>
+      {{else}}{{if .IsMod }}
+      <a href="/mod" class="btn-secondary">Mod</a>
+      {{end}}{{end}}
+      <a href="/logout" class="btn-primary">Logout</a>
+      {{else}}
+      <a href="/login" class="btn-primary">Login</a>
+      <a href="/register" class="btn-secondary">Register</a>
+      {{end}}
+    </nav>
+  </header>
+  <div id="content">
+    {{template "content" .}}
+  </div>
+  <footer>
+    <p>&copy; 2021 Global Bans</p>
+  </footer>
+</body>
+
+</html>
+<style>
+  html {
+    height: 100vh;
+  }
+
+  html,
+  body {
+    height: 100%;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background-image: radial-gradient(circle, #000000, #0c0c0c, #000000);
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    overflow: scroll;
+    flex: 1;
+  }
+
+  header {
+    background-color: #000000;
+    color: #ffffff;
+    text-align: center;
+    border-image: linear-gradient(to right, #6fbe2e 19%, #00bbd6 43%, #0f61a9 57%, #5a39a0 81%) 100;
+    border-bottom: 5px solid;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  #title {
+    display: flex;
+    align-items: center;
+  }
+
+  #title img {
+    margin: 1em;
+    filter: hue-rotate(0deg);
+    animation: huerotate 15s linear infinite;
+  }
+
+  @keyframes huerotate {
+    0% {
+      filter: hue-rotate(0deg);
+    }
+
+    100% {
+      filter: hue-rotate(360deg);
+    }
+  }
+
+  nav {
+    margin: 1em;
+  }
+
+  nav a {
+    color: #ffffff;
+    text-decoration: none;
+    margin: 0 1em;
+  }
+
+  nav a:hover {
+    color: #6fbe2e;
+  }
+
+  main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #eeeeee;
+  }
+
+  .btn-primary {
+    background-color: #6fbe2e;
+    color: #ffffff;
+    padding: 0.5em 1em;
+    border: none;
+    border-radius: 0.5em;
+    text-decoration: none;
+  }
+
+  .btn-primary:hover {
+    background-color: #5a39a0;
+  }
+
+  .btn-secondary {
+    background-color: #00bbd6;
+    color: #ffffff;
+    padding: 0.5em 1em;
+    border: none;
+    border-radius: 0.5em;
+    text-decoration: none;
+  }
+
+  .btn-secondary:hover {
+    background-color: #0f61a9;
+  }
+
+  #content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #eeeeee;
+    width: 100%;
+    height: 100%;
+  }
+
+  footer {
+    background-color: #000000;
+    color: #ffffff;
+    text-align: center;
+    border-image: linear-gradient(to right, #6fbe2e 19%, #00bbd6 43%, #0f61a9 57%, #5a39a0 81%) 100;
+    border-top: 5px solid;
+    padding: 1em;
+    margin-top: auto;
+    width: 100%;
+  }
+</style>

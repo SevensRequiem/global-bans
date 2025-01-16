@@ -1,0 +1,85 @@
+{{define "content"}}
+<div id="login">
+    <h1>Login</h1>
+    <div id="login-inner">
+        <form>
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit" class="btn-primary">Login</button>
+        </form>
+    </div>
+</div>
+<script>
+
+    const form = document.querySelector('form');
+    const csrf = document.querySelector('meta[name="csrf"]').content;
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        axios.post('/auth/login', {
+            username: form.username.value,
+            password: form.password.value
+        }, {
+            headers: {
+                'X-CSRF-Token': csrf
+            }
+
+        })
+            .then((response) => {
+                if (response.data.success) {
+                    window.location.href = '/';
+                } else {
+                    alert(response.data.message);
+                }
+            })
+            .catch((error) => {
+                console.error(error);
+            });
+    });
+</script>
+<style>
+    #login {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #eeeeee;
+        width: 100%;
+    }
+
+    #login-inner {
+        width: 50%;
+        margin: 0 auto;
+        padding: 2em;
+        background-color: rgba(29, 29, 29, 0.404);
+        border-radius: 2em;
+    }
+
+    #login h1 {
+        text-align: center;
+        padding: 2em;
+    }
+
+    #login form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #login input {
+        width: 50%;
+        padding: 1em;
+        margin: 0.5em;
+        border: none;
+        border-radius: 5px;
+    }
+
+    #login button {
+        width: 30%;
+        padding: 1em;
+        margin: 0.5em;
+        border: none;
+        border-radius: 5px;
+    }
+</style>
+{{end}}

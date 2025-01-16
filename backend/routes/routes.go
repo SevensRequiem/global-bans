@@ -5,8 +5,8 @@ import (
 	"globalbans/backend/auth"
 	"globalbans/backend/bans"
 	"globalbans/backend/home"
+	"globalbans/backend/serverauth"
 	"globalbans/backend/stats"
-	"globalbans/backend/user"
 	"globalbans/integration/minecraft"
 	"globalbans/integration/ping"
 	"globalbans/integration/source"
@@ -19,26 +19,66 @@ import (
 
 func Routes(e *echo.Echo) {
 	// Home
-	e.Static("/", "frontend/static")
-	e.Static("/static", "frontend/static")
-	e.Static("/assets", "frontend/assets")
-	e.GET("/home", func(c echo.Context) error {
+	e.GET("/", func(c echo.Context) error {
 		return home.HomeHandler(c)
 	})
-	e.GET("/admin", func(c echo.Context) error {
-		return home.AdminHandler(c)
+	e.GET("/bans", func(c echo.Context) error {
+		return home.BansHandler(c)
 	})
-	// Auth
-	e.GET("/login", func(c echo.Context) error {
-		return auth.LoginHandler(c)
+	e.GET("/servers", func(c echo.Context) error {
+		return home.ServersHandler(c)
 	})
-	e.GET("/logout", func(c echo.Context) error {
-		return auth.LogoutHandler(c)
+	e.GET("/appeals", func(c echo.Context) error {
+		return home.AppealsHandler(c)
 	})
-	e.GET("/auth/callback", func(c echo.Context) error {
-		return auth.CallbackHandler(c)
+	e.GET("/docs", func(c echo.Context) error {
+		return home.DocsHandler(c)
 	})
 
+	// Auth
+	e.GET("/login", func(c echo.Context) error {
+		return home.LoginHandler(c)
+	})
+	e.POST("/auth/login", func(c echo.Context) error {
+		return auth.Login(c)
+	})
+
+	e.Static("/assets", "frontend/assets")
+	// admin routes
+	e.GET("/admin", func(c echo.Context) error {
+		if !auth.IsAdmin(c) {
+			return home.HomeHandler(c)
+		}
+		return home.AdminHandler(c)
+	})
+	e.GET("/admin/bans", func(c echo.Context) error {
+		if !auth.IsAdmin(c) {
+			return home.HomeHandler(c)
+		}
+		return home.AdminBansHandler(c)
+	})
+	e.GET("/admin/dashboard", func(c echo.Context) error {
+		if !auth.IsAdmin(c) {
+			return home.HomeHandler(c)
+		}
+		return home.AdminDashboardHandler(c)
+	})
+	e.GET("/admin/servers", func(c echo.Context) error {
+		if !auth.IsAdmin(c) {
+			return home.HomeHandler(c)
+		}
+		return home.AdminServersHandler(c)
+	})
+	e.GET("/admin/settings", func(c echo.Context) error {
+		if !auth.IsAdmin(c) {
+			return home.HomeHandler(c)
+		}
+		return home.AdminSettingsHandler(c)
+	})
+
+	e.GET("/api/logout", func(c echo.Context) error {
+		return auth.Logout(c)
+	})
 	// API
 
 	e.GET("/api/ping", func(c echo.Context) error {
@@ -63,5 +103,11 @@ func Routes(e *echo.Echo) {
 	minecraft.Routes(e)
 	source.Routes(e)
 	bans.Routes(e)
-	user.Routes(e)
+	serverauth.Routes(e)
+	e.GET("/api/heath", func(c echo.Context) error {
+		return c.JSON(http.StatusOK, "OK")
+	})
+	e.GET("/api/stats", func(c echo.Context) error {
+		return stats.StatsHandler(c)
+	})
 }

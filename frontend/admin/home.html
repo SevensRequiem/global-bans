@@ -1,0 +1,162 @@
+{{define "admin-content"}}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<div id="admin-home">
+    <section id="admin-title">
+        <h1>Admin Dashboard</h1>
+    </section>
+    <section id="banchart">
+        <div id="bancontainer">
+
+        </div>
+        <script>
+            axios.get('/api/bans/weekly').then((response) => {
+                var bans = response.data;
+                var mon = bans.mon;
+                var tue = bans.tue;
+                var wed = bans.wed;
+                var thu = bans.thu;
+                var fri = bans.fri;
+                var sat = bans.sat;
+                var sun = bans.sun;
+            });
+            var options = {
+                series: [{
+                    name: 'Bans',
+                    data: [mon, tue, wed, thu, fri, sat, sun]
+                }],
+                chart: {
+                    height: 350,
+                    width: 500,
+                    type: 'area',
+                    zoom: {
+                        enabled: false
+                    }
+                },
+                dataLabels: {
+                    enabled: true,
+                    style: {
+                        colors: ['#333']
+                    }
+                },
+                stroke: {
+                    curve: 'straight'
+                },
+                title: {
+                    text: 'Bans',
+                    align: 'left'
+                },
+                grid: {
+                    row: {
+                        colors: ['#ffffff', '#f2f2f2'],
+                        opacity: 0.5
+                    },
+                    collumn: {
+                        colors: ['#ffffff', '#f2f2f2'],
+                        opacity: 0.5
+                    }
+                },
+                xaxis: {
+                    categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                },
+                responsive: [{
+                    breakpoint: 1000,
+                    options: {
+                        chart: {
+                            height: 300
+                        }
+                    }
+                }]
+
+            };
+
+            var chart = new ApexCharts(document.querySelector("#bancontainer"), options);
+            chart.render();
+        </script>
+    </section>
+    <seciton id="serverstats">
+        <h2>Server Stats</h2>
+        <ul>
+            <li>Server 1: 100 players</li>
+            <li>Server 2: 50 players</li>
+            <li>Server 3: 25 players</li>
+        </ul>
+    </seciton>
+    <seciton id="stats">
+        <h2>Stats</h2>
+        <ul>
+            <li>Players Banned: 100</li>
+            <li>Players Muted: 50</li>
+            <li>Players Kicked: 25</li>
+        </ul>
+    </seciton>
+    <seciton id="adminactions">
+        <h2>Admin Actions</h2>
+        <ul>
+            <li><a href="/admin/bans">View Bans</a></li>
+            <li><a href="/admin/servers">View Servers</a></li>
+            <li><a href="/admin/settings">View Settings</a></li>
+        </ul>
+    </seciton>
+</div>
+<style>
+    #admin-home {
+        display: grid;
+        grid-template-areas:
+            "admintitle admintitle"
+            "banmap serverstats"
+            "stats adminactions";
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 5fr 3fr;
+        grid-gap: 10px;
+        width: 100%;
+        height: 100%;
+    }
+
+    #admin-title {
+        grid-area: admintitle;
+        background-color: #333;
+        border-radius: 10px;
+        margin: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #banchart {
+        grid-area: banmap;
+        background-color: #33333379;
+        border-radius: 10px;
+        margin: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+
+    #serverstats {
+        grid-area: serverstats;
+        background-color: #33333379;
+        border-radius: 10px;
+        margin: 10px;
+    }
+
+    #stats {
+        grid-area: stats;
+        background-color: #33333379;
+        border-radius: 10px;
+        margin: 10px;
+    }
+
+    #adminactions {
+        grid-area: adminactions;
+        background-color: #33333379;
+        border-radius: 10px;
+        margin: 10px;
+    }
+
+    #banmap img {
+        width: 100%;
+        height: 100%;
+    }
+</style>
+{{end}}

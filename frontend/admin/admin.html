@@ -1,0 +1,75 @@
+{{define "content"}}
+<section id="admin">
+    <div id="admin-sidebar">
+        <nav>
+            <ul>
+                <li><a href="/admin/dashboard">Dashboard</a></li>
+                <li><a href="/admin/bans">Bans</a></li>
+                <li><a href="/admin/servers">Servers</a></li>
+                <li><a href="/admin/settings">Settings</a></li>
+            </ul>
+        </nav>
+    </div>
+    <div id="admin-content">
+        {{template "admin-content" .}}
+    </div>
+</section>
+<style>
+    #admin {
+        display: grid;
+        grid-template-areas:
+            "adminsidebar admincontent";
+        grid-template-columns: 200px auto;
+        grid-template-rows: auto;
+        grid-gap: 10px;
+        width: 100%;
+        height: 100%;
+    }
+
+    #admin-sidebar {
+        grid-area: adminsidebar;
+        background-color: #333;
+        border-radius: 10px;
+        margin: 10px;
+    }
+
+    #admin-content {
+        grid-area: admincontent;
+        background-color: #33333379;
+        border-radius: 10px;
+        margin: 10px;
+    }
+
+    #admin-sidebar nav {
+        width: 100%;
+        height: 100%;
+    }
+
+    #admin-sidebar nav ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    #admin-sidebar nav ul li {
+        padding: 10px;
+    }
+
+    #admin-sidebar nav ul li a {
+        color: white;
+        text-decoration: none;
+    }
+
+    #admin-sidebar nav ul li a:hover {
+        color: #ccc;
+    }
+
+    #admin-content {
+        padding: 10px;
+    }
+
+    #admin-content h1 {
+        margin-top: 0;
+    }
+</style>
+{{end}}

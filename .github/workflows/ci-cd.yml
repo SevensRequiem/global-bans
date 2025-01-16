@@ -43,9 +43,8 @@ jobs:
     - name: Build Backend (Golang)
       if: matrix.backend == true
       run: |
-        cd backend
         go mod tidy
-        go build -o myapp .
+        go build -o globalbans .
 
     - name: Run Tests (Frontend & Backend)
       run: |

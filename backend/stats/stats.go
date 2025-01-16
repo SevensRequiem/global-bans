@@ -4,9 +4,12 @@ import (
 	"context"
 	"globalbans/backend/database"
 	"globalbans/backend/logs"
+	"net/http"
 	"runtime"
+	"sync"
 	"time"
 
+	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -73,4 +76,92 @@ func GetWeeklyStats() []Day {
 		days = append(days, day)
 	}
 	return days
+}
+
+func TotalServers() int {
+	mcservers, err := database.DB_Main.Collection("minecraft_servers").CountDocuments(context.Background(), bson.M{})
+	if err != nil {
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
+	}
+
+	srcservers, err := database.DB_Main.Collection("source_servers").CountDocuments(context.Background(), bson.M{})
+	if err != nil {
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
+	}
+
+	miscservers, err := database.DB_Main.Collection("misc_servers").CountDocuments(context.Background(), bson.M{})
+	if err != nil {
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
+	}
+
+	count := mcservers + srcservers + miscservers
+	return int(count)
+}
+
+func TotalBans() int {
+	mcbans, err := database.DB_Main.Collection("minecraft_bans").CountDocuments(context.Background(), bson.M{})
+	if err != nil {
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
+	}
+
+	srcbans, err := database.DB_Main.Collection("source_bans").CountDocuments(context.Background(), bson.M{})
+	if err != nil {
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
+	}
+
+	miscbans, err := database.DB_Main.Collection("misc_bans").CountDocuments(context.Background(), bson.M{})
+	if err != nil {
+		_, file, line, ok := runtime.Caller(1)
+		if ok {
+			logs.LogError(err.Error(), line, file)
+		}
+	}
+
+	count := mcbans + srcbans + miscbans
+	return int(count)
+}
+
+type Stat struct {
+	TotalServers int `json:"total_servers"`
+	TotalBans    int `json:"total_bans"`
+}
+
+var (
+	cacheData      []Stat
+	cacheTimestamp time.Time
+	cacheMutex     sync.Mutex
+	cacheDuration  = 5 * time.Minute
+)
+
+func StatsHandler(c echo.Context) error {
+	totalServers := TotalServers()
+	totalBans := TotalBans()
+	stats := Stat{
+		TotalServers: totalServers,
+		TotalBans:    totalBans,
+	}
+
+	cacheMutex.Lock()
+	defer cacheMutex.Unlock()
+	if time.Since(cacheTimestamp) > cacheDuration {
+		cacheData = []Stat{stats}
+		cacheTimestamp = time.Now()
+	}
+
+	return c.JSON(http.StatusOK, stats)
 }
